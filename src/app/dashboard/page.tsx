@@ -1,18 +1,16 @@
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server"
 import { redirect } from "next/navigation"
 
-export default async function Home() {
+export default async function Page() {
+  // auth check
   const { isAuthenticated } = getKindeServerSession()
-  const isLoggedIn = await isAuthenticated()
-
-  if (isLoggedIn) {
-    // Redirect to dashboard if logged in
-    return redirect("/dashboard")
+  if (!(await isAuthenticated())) {
+    redirect("/api/auth/login")
   }
   return (
     <div>
       <main className="flex min-h-screen items-center justify-center">
-        <div className="">Main Page</div>
+        <div className="">Dashboard Page</div>
       </main>
     </div>
   )
