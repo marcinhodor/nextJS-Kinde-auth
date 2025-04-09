@@ -1,13 +1,21 @@
+import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server"
 import OpenAI from "openai"
 import { NextResponse } from "next/server"
+import { NextApiRequest } from "next"
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 })
 
-export async function POST(request: Request) {
+export async function POST(request: NextApiRequest) {
+  // Check if the request is authenticated with Kinde
+  const { isAuthenticated } = await getKindeServerSession(request)
+  if (!isAuthenticated) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
   try {
-    const body = await request.json()
+    const body = await request.body
     console.log(body)
     const messages = body.messages || []
 
