@@ -1,4 +1,8 @@
-import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server"
+import {
+  getKindeServerSession,
+  LoginLink,
+  RegisterLink,
+} from "@kinde-oss/kinde-auth-nextjs/server"
 import { redirect } from "next/navigation"
 
 export default async function Home() {
@@ -7,12 +11,16 @@ export default async function Home() {
 
   if (isLoggedIn) {
     // Redirect to dashboard if logged in
-    return redirect("/dashboard")
+    return redirect("/chat")
   }
   return (
     <div>
-      <main className="flex min-h-screen items-center justify-center">
-        <div className="">Main Page</div>
+      <main className="flex flex-col min-h-screen items-center justify-center">
+        <div className="">Private ChatGPT</div>
+        <div>
+          <LoginLink>Login</LoginLink>
+          <RegisterLink>Register</RegisterLink>
+        </div>
       </main>
     </div>
   )
