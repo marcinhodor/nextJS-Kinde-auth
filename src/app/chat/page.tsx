@@ -2,14 +2,21 @@
 
 import { useState } from "react"
 
-interface Message {
-  role: "user" | "assistant"
-  content: string
-}
+import { InputArea } from "../components/chat/input-area"
+import { MessageArea } from "../components/chat/message-area"
+import { OpenAIMessage } from "../types/message"
+import { completionSchema } from "../schemas/completion"
+
+const DEFAULT_SYSTEM_PROMPT = "You are a helpful assistant. Resond in markdown"
 
 export default function Page() {
   const [prompt, setPrompt] = useState("")
-  const [messages, setMessages] = useState<Message[]>([])
+  const [messages, setMessages] = useState<OpenAIMessage[]>([
+    {
+      role: "system",
+      content: DEFAULT_SYSTEM_PROMPT,
+    },
+  ])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -18,8 +25,9 @@ export default function Page() {
     if (!prompt.trim()) return
 
     setIsLoading(true)
-    const newMessage: Message = { role: "user", content: prompt }
+    const newMessage: OpenAIMessage = { role: "user", content: prompt }
     setMessages((prev) => [...prev, newMessage])
+    setPrompt("")
 
     try {
       const updatedMessages = [...messages, newMessage]
@@ -35,16 +43,22 @@ export default function Page() {
         throw new Error("Network response was not ok")
       }
 
-      const data = await response.json()
+      const rawData = await response.json()
+      const data = completionSchema.safeParse(rawData)
+
+      if (!data.success) {
+        throw new Error("Invalid response format from OpenAI API")
+      }
+
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: data.message },
+        { role: "assistant", content: data.data.choices[0].message.content },
       ])
     } catch (error) {
+      console.error("Error fetching data:", error)
       setError("An error occurred while fetching the data.")
     } finally {
       setIsLoading(false)
-      setPrompt("")
     }
   }
 
@@ -53,47 +67,22 @@ export default function Page() {
       <main className="flex-1 overflow-hidden p-4">
         <div className="mx-auto max-w-4xl">
           {/* Messages Area */}
-          <div className="h-[calc(100vh-200px)] overflow-y-auto rounded-lg p-4 shadow-md">
-            {messages.map((message, index) => (
-              <div
-                key={index}
-                className={`mb-4 rounded-lg p-4 ${
-                  message.role === "user" ? "bg-blue-900" : "bg-gray-900"
-                }`}
-              >
-                <p className="text-sm font-semibold">
-                  {message.role === "user" ? "You" : "Assistant"}:
-                </p>
-                <p className="mt-1">{message.content}</p>
-              </div>
-            ))}
-            {isLoading && (
-              <div className="flex items-center justify-center">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
-              </div>
-            )}
-          </div>
+          <MessageArea messages={messages} isLoading={isLoading} />
+
+          {/* Error message */}
+          {error && (
+            <div className="mt-4 rounded-lg bg-red-100 p-4 text-red-700">
+              {error}
+            </div>
+          )}
 
           {/* Input Area */}
-          <form onSubmit={handleSubmit} className="mt-4">
-            <div className="flex items-center gap-4">
-              <input
-                type="text"
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                placeholder="Type your message here..."
-                className="flex-1 rounded-lg border border-gray-300 p-4 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                disabled={isLoading}
-              />
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="rounded-lg bg-blue-500 p-4 text-white hover:bg-blue-600 disabled:opacity-50"
-              >
-                Send
-              </button>
-            </div>
-          </form>
+          <InputArea
+            handleSubmit={handleSubmit}
+            prompt={prompt}
+            setPrompt={setPrompt}
+            isLoading={isLoading}
+          />
         </div>
       </main>
     </div>
