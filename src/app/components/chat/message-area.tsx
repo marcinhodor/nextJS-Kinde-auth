@@ -12,7 +12,7 @@ export function MessageArea({
   return (
     <div className="h-[calc(100vh-200px)] overflow-y-auto rounded-lg shadow-md">
       {messages.length === 1 ? (
-        <div className="text-center">
+        <div className="flex h-full items-center justify-center text-gray-400">
           Begin the conversation by typing your first message.
         </div>
       ) : null}
